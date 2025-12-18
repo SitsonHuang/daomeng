@@ -1,50 +1,38 @@
-name: Activity Monitor Cron
+name: 抢票定时巡检
 
 on:
-  # 1. 允许手动触发 (方便测试)
-  workflow_dispatch:
-  
-  # 2. 定时触发 (Cron 语法)
-  # GitHub Actions 使用 UTC 时间。
-  # 北京时间 = UTC + 8
-  # 目标：北京 06:00 - 24:00 (次日00:00)
-  # 换算为 UTC：前一天 22:00 - 当天 16:00
+  workflow_dispatch:  # 允许手动触发
   schedule:
-    # 第一段：UTC 22:00 - 23:55 (对应北京时间 06:00 - 07:55)
+    # 北京时间 06:00 - 24:00 (UTC 22:00 - 16:00)
     - cron: '*/5 22-23 * * *'
-    
-    # 第二段：UTC 00:00 - 16:00 (对应北京时间 08:00 - 24:00)
     - cron: '*/5 0-16 * * *'
 
 jobs:
-  run-monitor:
+  check-spots:
     runs-on: ubuntu-latest
-    
-    # 设置超时时间，防止程序卡死耗尽免费额度
-    timeout-minutes: 10
+    timeout-minutes: 5 # 设置超时，防止卡死
 
     steps:
-      - name: Checkout code (拉取代码)
+      - name: 拉取代码
         uses: actions/checkout@v4
 
-      - name: Set up Python (设置Python环境)
+      - name: 设置Python环境
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip' # 缓存依赖，加快运行速度
+          cache: 'pip'
 
-      - name: Install dependencies (安装依赖)
+      - name: 安装依赖
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # 安装 Playwright 需要的浏览器
           playwright install chromium
 
-      - name: Run script (运行脚本)
+      - name: 运行脚本
+        # 👇👇👇 重点检查这里！👇👇👇
+        # env 必须在 run 的同一级别，或者紧跟着 run
         env:
-          # 将 GitHub Secrets 注入到环境变量中
           MAIL_SENDER: ${{ secrets.MAIL_SENDER }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           MAIL_RECEIVER: ${{ secrets.MAIL_RECEIVER }}
-        run: |
-          python main.py
+        # 👆👆👆 这一块不能少，也不能缩进错误 👆👆👆
+        run: python main.py
