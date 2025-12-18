@@ -55,9 +55,11 @@ async def main():
         await browser.close()
 
 if __name__ == "__main__":
+    print(f"调试信息: Sender={bool(EMAIL_CONFIG['sender'])}, Pwd={bool(EMAIL_CONFIG['password'])}")
     # 简单检查环境变量是否存在
     if not EMAIL_CONFIG["password"]:
         print("❌ 错误：未检测到环境变量 MAIL_PASSWORD。")
         print("如果是本地运行，请手动填入；如果是GitHub Actions，请检查Secrets设置。")
     else:
         asyncio.run(main())
+
